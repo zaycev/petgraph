@@ -78,9 +78,9 @@ where
     H: FnMut(G::NodeId) -> K,
     K: Measure + Copy,
 {
-    let mut visit_next = BinaryHeap::new();
-    let mut scores = HashMap::new(); // g-values, cost to reach the node
-    let mut estimate_scores = HashMap::new(); // f-values, cost to reach + estimate cost to goal
+    let mut visit_next = BinaryHeap::with_capacity(16_000);
+    let mut scores = hashbrown::HashMap::with_capacity(1024); // g-values, cost to reach the node
+    let mut estimate_scores = hashbrown::HashMap::with_capacity(1024); // f-values, cost to reach + estimate cost to goal
     let mut path_tracker = PathTracker::<G>::new();
 
     let zero_score = K::default();
@@ -98,8 +98,10 @@ where
         // before adding it to `visit_next`.
         let node_score = scores[&node];
 
+
+
         match estimate_scores.entry(node) {
-            Occupied(mut entry) => {
+            hashbrown::hash_map::Entry::Occupied(mut entry) => {
                 // If the node has already been visited with an equal or lower score than now, then
                 // we do not need to re-visit it.
                 if *entry.get() <= estimate_score {
@@ -107,7 +109,7 @@ where
                 }
                 entry.insert(estimate_score);
             }
-            Vacant(entry) => {
+            hashbrown::hash_map::Entry::Vacant(entry) => {
                 entry.insert(estimate_score);
             }
         }
@@ -117,7 +119,7 @@ where
             let next_score = node_score + edge_cost(edge);
 
             match scores.entry(next) {
-                Occupied(mut entry) => {
+                hashbrown::hash_map::Entry::Occupied(mut entry) => {
                     // No need to add neighbors that we have already reached through a shorter path
                     // than now.
                     if *entry.get() <= next_score {
@@ -125,7 +127,7 @@ where
                     }
                     entry.insert(next_score);
                 }
-                Vacant(entry) => {
+                hashbrown::hash_map::Entry::Vacant(entry) => {
                     entry.insert(next_score);
                 }
             }
